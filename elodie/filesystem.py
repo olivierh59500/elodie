@@ -10,10 +10,10 @@ import os
 import re
 import shutil
 import time
-import sys
 
 from elodie import geolocation
 from elodie import log
+from elodie import compatability
 from elodie.config import load_config
 from elodie.localstorage import Db
 from elodie.media.base import Base, get_all_subclasses
@@ -21,29 +21,6 @@ from elodie.media.base import Base, get_all_subclasses
 
 class FileSystem(object):
     """A class for interacting with the file system."""
-    
-    def copyfile(self, src, dst):
-        try:
-            O_BINARY = os.O_BINARY
-        except:
-            O_BINARY = 0
-
-        READ_FLAGS = os.O_RDONLY | O_BINARY
-        WRITE_FLAGS = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | O_BINARY
-        BUFFER_SIZE = 128*1024
-        
-        try:
-            fin = os.open(src, READ_FLAGS)
-            stat = os.fstat(fin)
-            fout = os.open(dst, WRITE_FLAGS, stat.st_mode)
-            for x in iter(lambda: os.read(fin, BUFFER_SIZE), ""):
-                os.write(fout, x)
-        finally:
-            try: os.close(fin)
-            except: pass
-            try: os.close(fout)
-            except: pass
-        
 
     def __init__(self):
         # The default folder path is along the lines of 2015-01-Jan/Chicago
@@ -354,13 +331,7 @@ class FileSystem(object):
             shutil.move(_file, dest_path)
             os.utime(dest_path, (stat.st_atime, stat.st_mtime))
         else:
-            # Do not use copy2(), will have an issue when copying to a network/mounted drive
-            # using copy and manual set_date_from_filename gets the job done
-            # shutil.copy(_file, dest_path)
-            
-            # shutil.copy seems slow, changing to streaming according to
-            # http://stackoverflow.com/questions/22078621/python-how-to-copy-files-fast
-            self.copyfile(_file, dest_path)
+            compatability.copyfile(_file, dest_path)
             self.set_utime(media)
 
 
